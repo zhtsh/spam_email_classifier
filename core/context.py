@@ -46,7 +46,7 @@ class SpamClassifierContext(object):
 
     def _set_samples_values(self, files, index):
         for file_path in files:
-            all_words = open(file_path, 'rb').readall().strip().split()
+            all_words = open(file_path, 'rb').read().strip().split()
             terms = set(all_words)
             for term in terms:
                 if term in self._dictionary:

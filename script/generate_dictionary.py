@@ -15,7 +15,7 @@ if __name__ == '__main__':
     dictionary = set()
     for file_path in files:
         with open(file_path, 'rb') as file:
-            terms = file.readall().strip().split()
+            terms = file.read().strip().split()
             for term in terms:
                 dictionary.add(term)
     dictionary_path = path.abspath(path.join(path.dirname(__file__), '../data/dictionary.txt'))
