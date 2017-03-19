@@ -19,6 +19,6 @@ if __name__ == '__main__':
             for term in terms:
                 dictionary.add(term)
     dictionary_path = path.abspath(path.join(path.dirname(__file__), '../data/dictionary.txt'))
-    with open('', 'wb') as dictionary_file:
+    with open(dictionary_path, 'wb') as dictionary_file:
         for term in dictionary:
             dictionary_file.write(term + '\n')
