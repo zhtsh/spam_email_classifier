@@ -1,0 +1,6 @@
+*.idea
+*.pyc
+*.tmp
+*.bak
+*.log
+.ipynb_checkpoints
