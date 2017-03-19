@@ -5,8 +5,11 @@ script_dir=`cd $script_dir; pwd`
 root_dir=`cd $script_dir/..; pwd`
 corpus_dir=`cd $root_dir/corpus; pwd`
 
+cd $corpus_dir
 find . ! -path . -type d | xargs rm -rf
-bz2_files=`find $corpus_dir -type f`
+mkdir preprocess_spam
+mkdir preprocess_nonspam
+bz2_files=`find . -type f`
 for bz2_file in $bz2_files
 do
     tar -xvjf $bz2_file

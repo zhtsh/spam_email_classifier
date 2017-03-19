@@ -59,7 +59,7 @@ if __name__ == '__main__':
                     email_body_text = ' '.join(email_bodies)
                     email_body_text = re.sub(r'[^a-zA-Z]+', ' ', email_body_text)
                     tokens = nltk.word_tokenize(email_body_text)
-                    filtered_tokens = [word for word in tokens if word not in english_stopwords]
+                    filtered_tokens = [word for word in tokens if len(word)>1 and word not in english_stopwords]
                     email_body_text = ' '.join(filtered_tokens)
                     preprocess_path = path.join(preprocess_dir, file_name)
                     preprocess_file = open(preprocess_path, 'wb')
