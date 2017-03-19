@@ -7,6 +7,7 @@ import sys
 import re
 import nltk
 import email
+import logging
 from os import path
 from nltk.corpus import stopwords
 from HTMLParser import HTMLParser
@@ -29,19 +30,19 @@ class MyHTMLParser(HTMLParser):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print('Usage: python email_etl.py corpus_dir')
-        sys.exit(1)
-    corpus_dir = sys.argv[1]
+    logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
+    root_dir = path.abspath(path.join(path.dirname(__file__), '../'))
+    corpus_dir = path.join(root_dir, 'corpus')
     english_stopwords = stopwords.words('english')
     for child_item in os.walk(corpus_dir):
         child_dir = child_item[0]
         if child_dir != corpus_dir:
             if path.basename(child_dir).find('spam') != -1:
-                preprocess_dir = path.join(corpus_dir, 'preprocess_spam')
+                preprocess_dir = path.join(root_dir, 'data/preprocess_spam')
             else:
-                preprocess_dir = path.join(corpus_dir, 'preprocess_nonspam')
+                preprocess_dir = path.join(root_dir, 'data/preprocess_nonspam')
             for file_name in child_item[2]:
+                logging.info('preprocessing file: %s' % file_name)
                 file_path = path.join(child_dir, file_name)
                 email_message = email.message_from_file(open(file_path, 'rb'))
                 email_bodies = []
@@ -50,9 +51,12 @@ if __name__ == '__main__':
                     if content_type == 'text/plain':
                         email_bodies.append(part.get_payload())
                     elif content_type == 'text/html':
-                        parser = MyHTMLParser()
-                        parser.feed(part.get_payload())
-                        email_bodies.append(parser.get_body())
+                        try:
+                            parser = MyHTMLParser()
+                            parser.feed(part.get_payload())
+                            email_bodies.append(parser.get_body())
+                        except Exception as e:
+                            logging.info(str(e))
                     else:
                         continue
                 if email_bodies:
