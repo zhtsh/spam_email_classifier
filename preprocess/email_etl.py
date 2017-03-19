@@ -10,6 +10,7 @@ import email
 import logging
 from os import path
 from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
 from HTMLParser import HTMLParser
 
 
@@ -34,6 +35,7 @@ if __name__ == '__main__':
     root_dir = path.abspath(path.join(path.dirname(__file__), '../'))
     corpus_dir = path.join(root_dir, 'corpus')
     english_stopwords = stopwords.words('english')
+    wnl = WordNetLemmatizer()
     for child_item in os.walk(corpus_dir):
         child_dir = child_item[0]
         if child_dir != corpus_dir:
@@ -63,7 +65,8 @@ if __name__ == '__main__':
                     email_body_text = ' '.join(email_bodies)
                     email_body_text = re.sub(r'[^a-zA-Z]+', ' ', email_body_text)
                     tokens = nltk.word_tokenize(email_body_text)
-                    filtered_tokens = [word for word in tokens if len(word)>1 and word not in english_stopwords]
+                    filtered_tokens = [wnl.lemmatize(word.lower()) for word in tokens
+                                       if len(word)>1 and word not in english_stopwords]
                     email_body_text = ' '.join(filtered_tokens)
                     preprocess_path = path.join(preprocess_dir, file_name)
                     preprocess_file = open(preprocess_path, 'wb')
