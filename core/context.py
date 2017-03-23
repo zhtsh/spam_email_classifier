@@ -21,8 +21,11 @@ class SpamClassifierContext(object):
     def train(self):
         self._classifier_strategy.train(self)
 
-    def predict(self, x):
-        return self._classifier_strategy.predict(x)
+    def predict(self, test_x):
+        return self._classifier_strategy.predict(test_x)
+
+    def evaluate(self, y, p_label):
+        return self._classifier_strategy.evaluate(y, p_label)
 
     def load_samples(self, postive_samples_dir, negative_samples_dir, dictionary_path):
         spam_files = [path.join(postive_samples_dir, f) for f in listdir(postive_samples_dir)
@@ -43,6 +46,12 @@ class SpamClassifierContext(object):
         index = self._set_samples_values(spam_files, 0)
         logging.info('loading non spam samples...')
         index = self._set_samples_values(nonspam_files, index)
+
+    def save_model(self, model_path):
+        self._classifier_strategy.save_model(self, model_path)
+
+    def load_model(self, model_path):
+        self._classifier_strategy.load_model(self, model_path)
 
     def _set_samples_values(self, files, index):
         for file_path in files:
