@@ -48,10 +48,10 @@ class SpamClassifierContext(object):
         index = self._set_samples_values(nonspam_files, index)
 
     def save_model(self, model_path):
-        self._classifier_strategy.save_model(self, model_path)
+        self._classifier_strategy.save_model(model_path)
 
     def load_model(self, model_path):
-        self._classifier_strategy.load_model(self, model_path)
+        self._classifier_strategy.load_model(model_path)
 
     def _set_samples_values(self, files, index):
         for file_path in files:

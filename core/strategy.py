@@ -110,12 +110,12 @@ class SVMClassifierStrategy(ClassifierStrategy):
     LINEAR = 0  # linear: u'*v
     POLYNOMIAL = 1  # polynomial: (gamma*u'*v + coef0)^degree
     GAUSSIAN = 2    #  radial basis function: exp(-gamma*|u-v|^2)
-	SIGMOID = 3 # sigmoid: tanh(gamma*u'*v + coef0)
-	PRECOMPUTED_KERNEL = 4  # precomputed kernel (kernel values in training_set_file)
+    SIGMOID = 3 # sigmoid: tanh(gamma*u'*v + coef0)
+    PRECOMPUTED_KERNEL = 4  # precomputed kernel (kernel values in training_set_file)
 
     def __init__(self,
-                 svm_type=SVMClassifierStrategy.C_SVC,
-                 kernel_type=SVMClassifierStrategy.GAUSSIAN,
+                 svm_type=C_SVC,
+                 kernel_type=GAUSSIAN,
                  degree=3,
                  gamma=None,
                  coef0=0,
@@ -142,7 +142,7 @@ class SVMClassifierStrategy(ClassifierStrategy):
             param += (' -r %d' % coef0)
         if cost != 1:
             param += (' -c %d' % cost)
-        param += ('-n %f -p %f' % (nu, epsilon))
+        param += (' -n %f -p %f' % (nu, epsilon))
         if cachesize != 100:
             param += (' -m %d' % cachesize)
         param += (' -e %f -h %d -b %d' % (epsilon, shrinking, probability_estimates))
