@@ -64,7 +64,8 @@ class EmailETLHelper(object):
 
         return self.n
 
-    def get_body_from_email(self, email_path):
+    @classmethod
+    def get_body_from_email(cls, email_path):
         """
         preprocess mime email message, return clean email body string
         :param email_path: mime email path

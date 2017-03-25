@@ -24,8 +24,7 @@ if __name__ == '__main__':
             for file_name in child_item[2]:
                 logging.info('preprocessing file: %s' % file_name)
                 file_path = path.join(child_dir, file_name)
-                etl_helper = EmailETLHelper.instance()
-                email_body_text = etl_helper.get_body_from_email(file_path)
+                email_body_text = EmailETLHelper.get_body_from_email(file_path)
                 if email_body_text:
                     preprocess_path = path.join(preprocess_dir, file_name)
                     preprocess_file = open(preprocess_path, 'wb')
