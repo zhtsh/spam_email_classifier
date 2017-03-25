@@ -24,7 +24,10 @@ class ClassifierStrategy(object):
         return np.zeros(test_x.shape[0])
 
     def evaluate(self, y, p_label):
-        return (0.0, 0.0)
+        yy = [value for value in y]
+        label = [value for value in p_label]
+        acc, mse, scc = evaluations(yy, label)
+        return (acc, mse, scc)
 
     def save_model(self, model_path):
         pass
@@ -167,12 +170,6 @@ class SVMClassifierStrategy(ClassifierStrategy):
         x = [[value for value in feature] for feature in test_x]
         p_label, _, _ = svm_predict(y, x, self._model)
         return np.array(p_label)
-
-    def evaluate(self, y, p_label):
-        yy = [value for value in y]
-        label = [value for value in p_label]
-        acc, mse, _ = evaluations(yy, label)
-        return (acc, mse)
 
     def save_model(self, model_path):
         logging.info('save model to path: %s' % model_path)

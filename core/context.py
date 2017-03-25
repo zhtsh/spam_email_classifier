@@ -28,8 +28,16 @@ class SpamClassifierContext(object):
     def predict(self, test_x):
         return self._classifier_strategy.predict(test_x)
 
-    def evaluate(self, y, p_label):
-        return self._classifier_strategy.evaluate(y, p_label)
+    def evaluate(self, text_x, test_y):
+        """
+        evaluate model metrix on test data
+        :param text_x: test data features
+        :param test_y: test data labels
+        :return: (acc, mse, scc)
+        """
+
+        p_label = self.predict(text_x)
+        return self._classifier_strategy.evaluate(test_y, p_label)
 
     def load_samples(self, postive_samples_dir, negative_samples_dir):
         spam_files = [path.join(postive_samples_dir, f) for f in listdir(postive_samples_dir)

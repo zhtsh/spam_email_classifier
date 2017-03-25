@@ -15,11 +15,10 @@ if __name__ == '__main__':
     postive_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/preprocess_spam'))
     negative_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/preprocess_nonspam'))
     model_path = path.abspath(path.join(path.dirname(__file__), '../data/svm.model'))
-    classifier_strategy = SVMClassifierStrategy(svm_type=SVMClassifierStrategy.C_SVC,
-                                                kernel_type=SVMClassifierStrategy.LINEAR,
-                                                cost=100,
-                                                cachesize=1024)
+    classifier_strategy = SVMClassifierStrategy()
     classifier_context = SpamClassifierContext(classifier_strategy)
     classifier_context.load_samples(postive_samples_dir, negative_samples_dir)
-    classifier_context.train()
-    classifier_context.save_model(model_path)
+    classifier_context.load_model(model_path)
+    test_x, test_y = classifier_context.get_samples()
+    acc, mse, scc = classifier_context.evaluate(test_x, test_y)
+    logging.info('acc: %f, mse: %f, scc: %f' % (acc, mse, scc))
