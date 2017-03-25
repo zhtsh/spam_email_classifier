@@ -3,6 +3,7 @@
 # author=zhtsh
 
 import sys
+import json
 import logging
 from os import path
 import numpy as np
@@ -81,6 +82,26 @@ class LRClassifierStrategy(ClassifierStrategy):
 
     def _hypothesis(self, x):
         return 1.0 / (1.0 + np.exp(-np.inner(self._theta, x)))
+
+    def save_model(self, model_path):
+        logging.info('saving mode to path: %s' % model_path)
+        with open(model_path, 'wb') as model_file:
+            model_data = {}
+            model_data['alpha'] = self._alpha
+            model_data['iterations'] = self._iterations
+            model_data['theta'] = [value for value in self._theta]
+            model_data['threshold'] = self._threshold
+            json_data = json.dumps(model_data)
+            model_file.write(json_data)
+
+    def load_model(self, model_path):
+        logging.info('loading model from path: %s' % model_path)
+        with open(model_path, 'rb') as model_file:
+            model_data = json.load(model_file)
+            self._alpha = model_data['alpha']
+            self._iterations = model_data['iterations']
+            self._theta = np.array(model_data['theta'])
+            self._threshold = model_data['threshold']
 
 
 class NNClassifierStrategy(ClassifierStrategy):

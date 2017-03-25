@@ -12,8 +12,8 @@ from strategy import SVMClassifierStrategy
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
-    postive_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/preprocess_spam'))
-    negative_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/preprocess_nonspam'))
+    postive_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/spam_train'))
+    negative_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/nonspam_train'))
     model_path = path.abspath(path.join(path.dirname(__file__), '../data/svm.model'))
     classifier_strategy = SVMClassifierStrategy(svm_type=SVMClassifierStrategy.C_SVC,
                                                 kernel_type=SVMClassifierStrategy.LINEAR,
