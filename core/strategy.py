@@ -124,7 +124,7 @@ class SVMClassifierStrategy(ClassifierStrategy):
                  epsilon_svr=0.1,
                  cachesize=100,
                  epsilon=0.001,
-                 shrinking=1,
+                 shrinking=0,
                  probability_estimates=0,
                  weight=None,
                  n_fold=None):
@@ -163,7 +163,7 @@ class SVMClassifierStrategy(ClassifierStrategy):
         self._model = svm_train(self._prob, self._param)
 
     def predict(self, test_x):
-        y = [0 for i in range(test_x.shape[1])]
+        y = [0 for i in range(test_x.shape[0])]
         x = [[value for value in feature] for feature in test_x]
         p_label, _, _ = svm_predict(y, x, self._model)
         return np.array(p_label)

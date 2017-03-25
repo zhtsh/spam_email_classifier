@@ -12,7 +12,6 @@ from strategy import SVMClassifierStrategy
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
-    dictionary_path = path.abspath(path.join(path.dirname(__file__), '../data/dictionary.txt'))
     postive_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/preprocess_spam'))
     negative_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/preprocess_nonspam'))
     model_path = path.abspath(path.join(path.dirname(__file__), '../data/svm.model'))
@@ -21,6 +20,6 @@ if __name__ == '__main__':
                                                 cost=100,
                                                 cachesize=1024)
     classifier_context = SpamClassifierContext(classifier_strategy)
-    classifier_context.load_samples(postive_samples_dir, negative_samples_dir, dictionary_path)
+    classifier_context.load_samples(postive_samples_dir, negative_samples_dir)
     classifier_context.train()
     classifier_context.save_model(model_path)
