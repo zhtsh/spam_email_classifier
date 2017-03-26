@@ -18,6 +18,9 @@ class ClassifierStrategy(object):
     base classifier strategy class
     """
 
+    BGD = 0 # Batch gradient descent
+    SGD = 1 # Stochastic gradient descent
+
     def train(self, context):
         pass
 
@@ -45,39 +48,86 @@ class LRClassifierStrategy(ClassifierStrategy):
     def __init__(self,
                  alpha=0.03,
                  iterations=100,
+                 epsilon=0.001,
+                 regularization=False,
+                 optimization=ClassifierStrategy.BGD,
                  threshold=0.5):
         self._alpha = alpha
         self._iterations = iterations
+        self._epsilon = epsilon
+        self._regularization = regularization
+        self._optimization = optimization
         self._theta = None
         self._threshold = threshold
 
     def train(self, context):
         (x, y) = context.get_samples()
+        if self._optimization == ClassifierStrategy.SGD:
+            self._train_sgd(x, y)
+        else:
+            self._train_bgd(x, y)
+
+    def _train_bgd(self, x, y):
         (m, n) = x.shape
         self._theta = np.zeros(n)
-        theta = np.zeros(n)
         for i in range(self._iterations):
-            cost, gradient = self._cost_function(self._theta, x, y)
-            logging.info('iteration: %d, cost: %f' % (i+1, cost))
+            cost, gradient = self._cost_function_bgd(x, y)
+            if cost <= self._epsilon:
+                logging.info('cost < %f, stop iteration' % self._epsilon)
             for j in range(n):
-                theta[j] = self._theta[j] - self._alpha*gradient[j]
-            self._theta[:] = theta[:]
+                self._theta[j] = self._theta[j] - self._alpha*gradient[j]
+            logging.info('iteration: %d, cost: %f' % (i+1, cost))
+            logging.info('gradient: %s' % str(gradient))
+            logging.info('theta: %s' % str(self._theta))
+
+    def _train_sgd(self, x, y):
+        (m, n) = x.shape
+        self._theta = np.zeros(n)
+        costs = []
+        stop_iteration = False
+        for i in range(self._iterations):
+            for k in range(m):
+                cost, gradient = self._cost_function_sgd(x[i], y[i])
+                costs.append(cost)
+                if len(costs) == 100:
+                    average_cost = sum(costs)/len(costs)
+                    logging.info('average cost: %f' % average_cost)
+                    logging.info('gradient: %s' % str(gradient))
+                    logging.info('theta: %s' % str(self._theta))
+                    costs = []
+                    if average_cost <= self._epsilon:
+                        logging.info('average cost < %f, stop iteration' % self._epsilon)
+                        stop_iteration = True
+                        break
+                for j in range(n):
+                    self._theta[j] = self._theta[j] - self._alpha*gradient[j]
+            if stop_iteration:
+                break
 
     def predict(self, test_x):
-        probability = self._hypothesis(x)
+        probability = self._hypothesis(test_x)
         return 1 if probability>=0.5 else 0
 
-    def _cost_function(self, theta, x, y):
+    def _cost_function_bgd(self, x, y):
         m, n = x.shape
         cost = 0.0
         gradient = np.zeros(n)
         for i in range(m):
-            h = self._hypothesis(theta, x[i])
-            cost += (-y[i]*np.log(h) -
-                      (1-y[i])*np.log(1-h))
+            h = self._hypothesis(x[i])
+            cost += (-y[i]*np.log(h) - (1-y[i])*np.log(1-h))
             for j in range(n):
                 gradient[j] += (h - y[i]) * x[i][j]
         cost = cost / m
+        gradient = gradient / m
+        return (cost, gradient)
+
+    def _cost_function_sgd(self, x, y):
+        n = x.size
+        gradient = np.zeros(n)
+        h = self._hypothesis(x)
+        cost = (-y*np.log(h) - (1-y)*np.log(1-h))
+        for j in range(n):
+            gradient[j] = (h - y) * x[j]
         return (cost, gradient)
 
     def _hypothesis(self, x):
@@ -89,6 +139,9 @@ class LRClassifierStrategy(ClassifierStrategy):
             model_data = {}
             model_data['alpha'] = self._alpha
             model_data['iterations'] = self._iterations
+            model_data['epsilon'] = self._epsilon
+            model_data['regularization'] = self._regularization
+            model_data['optimization'] = self._optimization
             model_data['theta'] = [value for value in self._theta]
             model_data['threshold'] = self._threshold
             json_data = json.dumps(model_data)
@@ -100,6 +153,9 @@ class LRClassifierStrategy(ClassifierStrategy):
             model_data = json.load(model_file)
             self._alpha = model_data['alpha']
             self._iterations = model_data['iterations']
+            self._epsilon = model_data['epsilon']
+            self._regularization = model_data['regularization']
+            self._optimization = model_data['optimization']
             self._theta = np.array(model_data['theta'])
             self._threshold = model_data['threshold']
 
