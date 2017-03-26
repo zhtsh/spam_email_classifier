@@ -111,9 +111,10 @@ class LRClassifierStrategy(ClassifierStrategy):
                 gradient[j] += (h - y[i]) * x[i][j]
                 if j != 0:
                     gradient[j] += self._lambda_factor * self._theta[j]
-        theta = self._theta[1:]
+        theta = np.array(self._theta)
+        theta[0] = 0
         cost = cost / m + self._lambda_factor / (2.0 * m) * theta.dot(theta)
-        gradient = gradient / m
+        gradient = (gradient + self._lambda_factor * theta) / m
         return (cost, gradient)
 
     def _cost_function_sgd(self, x, y):
@@ -161,6 +162,21 @@ class NNClassifierStrategy(ClassifierStrategy):
     """
     neural network classifier strategy class
     """
+
+    def __init__(self,
+                 alpha=0.03,
+                 iterations=100,
+                 epsilon=0.01,
+                 regularization=False,
+                 lambda_factor=100,
+                 threshold=0.5):
+        self._alpha = alpha
+        self._iterations = iterations
+        self._epsilon = epsilon
+        self._regularization = regularization
+        self._lambda_factor = lambda_factor if regularization else 0
+        self._theta = None
+        self._threshold = threshold
 
     def train(self, context):
         pass
