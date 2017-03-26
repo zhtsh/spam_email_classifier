@@ -58,7 +58,7 @@ class LRClassifierStrategy(ClassifierStrategy):
         self._iterations = iterations
         self._epsilon = epsilon
         self._regularization = regularization
-        self._lambda_factor = lambda_factor
+        self._lambda_factor = lambda_factor if regularization else 0
         self._optimization = optimization
         self._theta = None
         self._threshold = threshold
@@ -102,7 +102,7 @@ class LRClassifierStrategy(ClassifierStrategy):
 
     def _cost_function_bgd(self, x, y):
         m, n = x.shape
-        cost = 0.0
+        cost = 0
         gradient = np.zeros(n)
         for i in range(m):
             h = self._hypothesis(x[i])
