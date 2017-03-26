@@ -30,7 +30,7 @@ class SpamClassifierContext(object):
 
     def evaluate(self, text_x, test_y):
         """
-        evaluate model metrix on test data
+        evaluate model metrics on test data
         :param text_x: test data features
         :param test_y: test data labels
         :return: (acc, mse, scc)

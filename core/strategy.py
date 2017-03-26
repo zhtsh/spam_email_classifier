@@ -84,35 +84,19 @@ class LRClassifierStrategy(ClassifierStrategy):
     def _train_sgd(self, x, y):
         (m, n) = x.shape
         self._theta = np.zeros(n)
-        stop_iteration = False
-        costs = []
-        average_cost = 0.0
         for i in range(self._iterations):
             for k in range(m):
                 self._alpha = 10.0 / (100.0 + k)
-                # index = int(uniform(0, m))
-                # cost, gradient = self._cost_function_sgd(x[index], y[index])
-                cost, gradient = self._cost_function_sgd(x[k], y[k])
-                costs.append(cost)
-                if len(costs) == 1000:
-                    new_average_cost = sum(costs)/len(costs)
-                    logging.info('average cost: %f' % new_average_cost)
-                    logging.info('gradient: %s' % str(gradient))
-                    logging.info('theta: %s' % str(self._theta))
-                    if abs(new_average_cost - average_cost) <= 0.0001:
-                        logging.info('theta to converge, stop iteration')
-                        stop_iteration = True
-                        break
-                    costs = []
-                    average_cost = new_average_cost
+                index = int(uniform(0, m))
+                gradient = self._cost_function_sgd(x[index], y[index])
+                # gradient = self._cost_function_sgd(x[k], y[k])
                 for j in range(n):
                     self._theta[j] = self._theta[j] - self._alpha*gradient[j]
-            if stop_iteration:
-                break
+            logging.info('theta: %s' % str(self._theta))
 
     def predict(self, test_x):
-        probability = self._hypothesis(test_x)
-        return 1 if probability>=0.5 else 0
+        probability = [self._hypothesis(x) for x in test_x]
+        return np.array([1 if prob>=self._threshold else 0 for prob in probability])
 
     def _cost_function_bgd(self, x, y):
         m, n = x.shape
@@ -131,10 +115,9 @@ class LRClassifierStrategy(ClassifierStrategy):
         n = x.size
         gradient = np.zeros(n)
         h = self._hypothesis(x)
-        cost = (-y*np.log(h) - (1-y)*np.log(1-h))
         for j in range(n):
             gradient[j] = (h - y) * x[j]
-        return (cost, gradient)
+        return gradient
 
     def _hypothesis(self, x):
         return 1.0 / (1.0 + np.exp(-np.inner(self._theta, x)))

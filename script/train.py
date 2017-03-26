@@ -29,7 +29,7 @@ if __name__ == '__main__':
     if options.model_type == "lr":
         model_path = path.abspath(path.join(path.dirname(__file__), '../data/lr.model'))
         if optimization == ClassifierStrategy.SGD:
-            classifier_strategy = LRClassifierStrategy(iterations=10,
+            classifier_strategy = LRClassifierStrategy(iterations=30,
                                                        regularization=regularization,
                                                        optimization=optimization)
         else:
