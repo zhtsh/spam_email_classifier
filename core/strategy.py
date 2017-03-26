@@ -5,8 +5,9 @@
 import sys
 import json
 import logging
-from os import path
 import numpy as np
+from os import path
+from random import uniform
 
 sys.path.append(path.abspath(path.join(path.dirname(__file__), '../libsvm')))
 from svmutil import *
@@ -48,7 +49,7 @@ class LRClassifierStrategy(ClassifierStrategy):
     def __init__(self,
                  alpha=0.03,
                  iterations=100,
-                 epsilon=0.001,
+                 epsilon=0.01,
                  regularization=False,
                  optimization=ClassifierStrategy.BGD,
                  threshold=0.5):
@@ -69,7 +70,7 @@ class LRClassifierStrategy(ClassifierStrategy):
 
     def _train_bgd(self, x, y):
         (m, n) = x.shape
-        self._theta = np.zeros(n)
+        self._theta = np.ones(n)
         for i in range(self._iterations):
             cost, gradient = self._cost_function_bgd(x, y)
             if cost <= self._epsilon:
@@ -83,22 +84,27 @@ class LRClassifierStrategy(ClassifierStrategy):
     def _train_sgd(self, x, y):
         (m, n) = x.shape
         self._theta = np.zeros(n)
-        costs = []
         stop_iteration = False
+        costs = []
+        average_cost = 0.0
         for i in range(self._iterations):
             for k in range(m):
-                cost, gradient = self._cost_function_sgd(x[i], y[i])
+                self._alpha = 10.0 / (100.0 + k)
+                # index = int(uniform(0, m))
+                # cost, gradient = self._cost_function_sgd(x[index], y[index])
+                cost, gradient = self._cost_function_sgd(x[k], y[k])
                 costs.append(cost)
-                if len(costs) == 100:
-                    average_cost = sum(costs)/len(costs)
-                    logging.info('average cost: %f' % average_cost)
+                if len(costs) == 1000:
+                    new_average_cost = sum(costs)/len(costs)
+                    logging.info('average cost: %f' % new_average_cost)
                     logging.info('gradient: %s' % str(gradient))
                     logging.info('theta: %s' % str(self._theta))
-                    costs = []
-                    if average_cost <= self._epsilon:
-                        logging.info('average cost < %f, stop iteration' % self._epsilon)
+                    if abs(new_average_cost - average_cost) <= 0.0001:
+                        logging.info('theta to converge, stop iteration')
                         stop_iteration = True
                         break
+                    costs = []
+                    average_cost = new_average_cost
                 for j in range(n):
                     self._theta[j] = self._theta[j] - self._alpha*gradient[j]
             if stop_iteration:
