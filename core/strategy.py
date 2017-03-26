@@ -51,12 +51,14 @@ class LRClassifierStrategy(ClassifierStrategy):
                  iterations=100,
                  epsilon=0.01,
                  regularization=False,
+                 lambda_factor=100,
                  optimization=ClassifierStrategy.BGD,
                  threshold=0.5):
         self._alpha = alpha
         self._iterations = iterations
         self._epsilon = epsilon
         self._regularization = regularization
+        self._lambda_factor = lambda_factor
         self._optimization = optimization
         self._theta = None
         self._threshold = threshold
@@ -70,7 +72,7 @@ class LRClassifierStrategy(ClassifierStrategy):
 
     def _train_bgd(self, x, y):
         (m, n) = x.shape
-        self._theta = np.ones(n)
+        self._theta = np.zeros(n)
         for i in range(self._iterations):
             cost, gradient = self._cost_function_bgd(x, y)
             if cost <= self._epsilon:
@@ -107,7 +109,10 @@ class LRClassifierStrategy(ClassifierStrategy):
             cost += (-y[i]*np.log(h) - (1-y[i])*np.log(1-h))
             for j in range(n):
                 gradient[j] += (h - y[i]) * x[i][j]
-        cost = cost / m
+                if j != 0:
+                    gradient[j] += self._lambda_factor * self._theta[j]
+        theta = self._theta[1:]
+        cost = cost / m + self._lambda_factor / (2.0 * m) * theta.dot(theta)
         gradient = gradient / m
         return (cost, gradient)
 
@@ -130,6 +135,7 @@ class LRClassifierStrategy(ClassifierStrategy):
             model_data['iterations'] = self._iterations
             model_data['epsilon'] = self._epsilon
             model_data['regularization'] = self._regularization
+            model_data['lambda'] = self._lambda_factor
             model_data['optimization'] = self._optimization
             model_data['theta'] = [value for value in self._theta]
             model_data['threshold'] = self._threshold
@@ -144,6 +150,7 @@ class LRClassifierStrategy(ClassifierStrategy):
             self._iterations = model_data['iterations']
             self._epsilon = model_data['epsilon']
             self._regularization = model_data['regularization']
+            self._lambda_factor = model_data['lambda']
             self._optimization = model_data['optimization']
             self._theta = np.array(model_data['theta'])
             self._threshold = model_data['threshold']

@@ -23,18 +23,20 @@ if __name__ == '__main__':
                       help="value: 0 or 1, whether to use regularization items, svm ignore this option")
     parser.add_option("-o", "--optimization", dest="optimization", default="bgd",
                       help="gradient descent type: bgd, sgd")
+    parser.add_option("-i", "--iterations", dest="iterations", default=20,
+                      help="iteration count")
     (options, args) = parser.parse_args()
     regularization = True if options.regularization == "1" else False
     optimization = ClassifierStrategy.SGD if options.optimization=="sgd" else ClassifierStrategy.BGD
+    try:
+        iterations = int(options.iterations)
+    except:
+        iterations = 20
     if options.model_type == "lr":
         model_path = path.abspath(path.join(path.dirname(__file__), '../data/lr.model'))
-        if optimization == ClassifierStrategy.SGD:
-            classifier_strategy = LRClassifierStrategy(iterations=30,
-                                                       regularization=regularization,
-                                                       optimization=optimization)
-        else:
-            classifier_strategy = LRClassifierStrategy(regularization=regularization,
-                                                       optimization=optimization)
+        classifier_strategy = LRClassifierStrategy(iterations=iterations,
+                                                   regularization=regularization,
+                                                   optimization=optimization)
     elif options.model_type == "svm":
         model_path = path.abspath(path.join(path.dirname(__file__), '../data/svm.model'))
         classifier_strategy = SVMClassifierStrategy(svm_type=SVMClassifierStrategy.C_SVC,
