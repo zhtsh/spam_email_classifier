@@ -161,28 +161,166 @@ class NNClassifierStrategy(ClassifierStrategy):
 
     """
     neural network classifier strategy class
+    simple neural network, only one hidden layer
     """
 
     def __init__(self,
+                 hidden_layer_units=100,
                  alpha=0.03,
-                 iterations=100,
+                 iterations=10,
                  epsilon=0.01,
                  regularization=False,
                  lambda_factor=100,
                  threshold=0.5):
+        self._hidden_layer_units = hidden_layer_units
         self._alpha = alpha
         self._iterations = iterations
         self._epsilon = epsilon
         self._regularization = regularization
         self._lambda_factor = lambda_factor if regularization else 0
         self._theta = None
+        self._theta_size = 0
+        self._theta1 = None
+        self._theta2 = None
+        self._gradient = None
+        self._gradient1 = None
+        self._gradient2 = None
+        self._a1 = None
+        self._a2 = None
+        self._a3 = None
+        self._delta2 = None
+        self._delta3 = None
+        self._Delta1 = None
+        self._Delta2 = None
         self._threshold = threshold
 
     def train(self, context):
-        pass
+        features, labels = context.get_samples()
+        self._initialize_parameters(features.shape[1])
+        # checking whether gradient is correct,
+        # compare it with numerical gradient
+        self._back_propagation(features, labels)
+        if not self._checking_gradient():
+            logging.info('gradient is not equal to numerical value approximatly')
+            return
+        # use gradient descent to compute theta
+        for i in range(self._iterations):
+            self._back_propagation(features, labels)
 
     def predict(self, test_x):
         pass
+
+    def save_model(self, model_path):
+        pass
+
+    def load_model(self, model_path):
+        pass
+
+    def _initialize_parameters(self, n):
+        """
+        initialize all algorithm parameters
+        :param n: features count + 1
+        :return:
+        """
+        self._theta_size = n * self._hidden_layer_units + \
+            (self._hidden_layer_units + 1) * 1
+        # initialize theta in [-epsilon, epsilon]
+        self._theta = np.random.random(self._theta_size) * 2 * \
+                      self._epsilon - self._epsilon
+        self._gradient = np.zeros(self._theta_size)
+        self._theta1 = np.zeros((self._hidden_layer_units, n))
+        self._theta2 = np.zeros((1, self._hidden_layer_units + 1))
+        self._Delta1 = np.zeros((self._hidden_layer_units, n))
+        self._Delta2 = np.zeros((1, self._hidden_layer_units + 1))
+        self._gradient1 = np.zeros((self._hidden_layer_units, n))
+        self._gradient2 = np.zeros((1, self._hidden_layer_units + 1))
+
+    def _roll_theta(self, n):
+        """
+        split theta vector into matrix
+        :param n: features count + 1
+        :return:
+        """
+        for i in range(self._hidden_layer_units):
+            for j in range(n):
+                index = i * self._hidden_layer_units + j * n
+                self._theta1[i][j] = self._theta[index]
+        for i in range(self._hidden_layer_units + 1):
+            index = self._hidden_layer_units * n + i
+            self._theta2[0][i] = self._theta[index]
+
+    def _unroll_gradient(self, n):
+        """
+        unroll gradient matrix into vector
+        :param n: features count + 1
+        :return:
+        """
+        for i in range(self._hidden_layer_units):
+            for j in range(n):
+                index = i * self._hidden_layer_units + j * n
+                self._theta1[i][j] = self._theta[index]
+                self._gradient[index] = self._gradient1[i][j]
+        for i in range(self._hidden_layer_units + 1):
+            index = self._hidden_layer_units * n + i
+            self._gradient[index] = self._gradient2[0][i]
+
+    def _sigmoid(self, z):
+        return 1.0 / (1.0 + np.exp(z))
+
+    def _cost_function(self):
+        pass
+
+    def _forward_propagation(self, x):
+        self._a1 = x
+        z2 = self._theta1.dot(self._a1)
+        self._a2 = np.ones(self._hidden_layer_units+1)
+        self._a2[1:] = self._sigmoid(z2)
+        z3 = self._theta2.dot(self._a2)
+        self._a3 = self._sigmoid(z3)
+
+    def _back_propagation(self, features, labels):
+        """
+        back propagation algorithm, iterate one time to compute gradient
+        :param features: samples features matrix
+        :param labels: samples labels vector
+        :return:
+        """
+        m, n = features.shape
+        self._Delta1 = 0
+        self._Delta2 = 0
+        self._gradient1 = 0
+        self._gradient2 = 0
+        self._roll_theta(n)
+        for i in range(m):
+            self._forward_propagation(features[i])
+            self._delta3 = self._a3 - labels[i]
+            self._delta2 = (self._theta2.T.dot(self._delta3)) * self._a2 * (1 - self._a2)
+            self._Delta1 = self._Delta1 + self._delta2.dot(self._a1.T)
+            self._Delta2 = self._Delta2 + self._delta3.dot(self._a2.T)
+        for i in range(self._hidden_layer_units):
+            for j in range(n):
+                self._gradient1[i][j] = self._Delta1[i][j] / m
+                if j != 0:
+                    self._gradient1[i][j] += (self._lambda_factor / m * self._theta1[i][j])
+
+        for j in range(self._hidden_layer_units+1):
+            self._gradient2[0][j] = self._Delta2[0][j] / m
+            if j != 0:
+                self._gradient2[0][j] += (self._lambda_factor / m * self._theta2[0][j])
+        self._unroll_gradient(n)
+
+    def _checking_gradient(self):
+        gradient_approx = np.zeros(self._theta_size)
+        for i in range(self._theta_size):
+            theta_plus = np.array(self._theta)
+            theta_plus[i] += self._epsilon
+            theta_minus = np.array(self._theta)
+            theta_minus[i] -= self._epsilon
+            gradient_approx[i] = (self._cost_function(theta_plus) - \
+                self._cost_function(theta_minus)) / (2 * self._epsilon)
+            if abs(self._gradient[i] - gradient_approx[i]) > 0.01:
+                return False
+        return True
 
 
 class SVMClassifierStrategy(ClassifierStrategy):
