@@ -178,6 +178,8 @@ class NNClassifierStrategy(ClassifierStrategy):
         self._epsilon = epsilon
         self._regularization = regularization
         self._lambda_factor = lambda_factor if regularization else 0
+        self._threshold = threshold
+        self._features_count = 0
         self._theta = None
         self._theta_size = 0
         self._theta1 = None
@@ -192,11 +194,13 @@ class NNClassifierStrategy(ClassifierStrategy):
         self._delta3 = None
         self._Delta1 = None
         self._Delta2 = None
-        self._threshold = threshold
 
     def train(self, context):
         features, labels = context.get_samples()
-        self._initialize_parameters(features.shape[1])
+        self._features_count = features.shape[1]
+        self._theta_size = self._features_count * self._hidden_layer_units + \
+                            (self._hidden_layer_units + 1) * 1
+        self._initialize_all()
         # checking whether gradient is correct,
         # compare it with numerical gradient
         self._back_propagation(features, labels)
@@ -208,67 +212,106 @@ class NNClassifierStrategy(ClassifierStrategy):
             self._back_propagation(features, labels)
 
     def predict(self, test_x):
-        pass
+        m, n = test_x.shape
+        test_y = np.zeros(m)
+        self._roll_theta(self._theta)
+        for i in range(m):
+            self._forward_propagation(test_x[i])
+            test_y[i] = 1 if self._a3>=0.5 else 0
+        return test_y
 
     def save_model(self, model_path):
-        pass
+        json_data = {}
+        json_data['hidden_layer_units'] = self._hidden_layer_units
+        json_data['alpha'] = self._alpha
+        json_data['iterations'] = self._iterations
+        json_data['epsilon'] = self._epsilon
+        json_data['regularization'] = self._regularization
+        json_data['lambda_factor'] = self._lambda_factor
+        json_data['features_count'] = self._features_count
+        theta = [value for value in self._theta]
+        json_data['theta'] = theta
+        gradient = [value for value in self._gradient]
+        json_data['gradient'] = gradient
+        json_data['threshold'] = self._threshold
+        with open(model_path, 'wb') as model_file:
+            model_file.write(json.dumps(json_data))
 
     def load_model(self, model_path):
-        pass
+        json_data = json.load(open(model_path, 'rb'))
+        self._hidden_layer_units = json_data['hidden_layer_units']
+        self._alpha = json_data['alpha']
+        self._iterations = json_data['iterations']
+        self._epsilon = json_data['epsilon']
+        self._regularization = json_data['regularization']
+        self._lambda_factor = json_data['lambda_factor']
+        self._features_count = json_data['features_count']
+        self._threshold = json_data['threshold']
+        self._theta = np.array(json_data['theta'])
+        self._theta_size = self._theta.size
+        self._gradient = np.array(json_data['gradient'])
+        self._initialize_matrixs()
 
-    def _initialize_parameters(self, n):
+    def _initialize_all(self):
         """
         initialize all algorithm parameters
-        :param n: features count + 1
-        :return:
         """
-        self._theta_size = n * self._hidden_layer_units + \
-            (self._hidden_layer_units + 1) * 1
         # initialize theta in [-epsilon, epsilon]
-        self._theta = np.random.random(self._theta_size) * 2 * \
-                      self._epsilon - self._epsilon
+        self._theta = np.random.random(self._theta_size) * 2 * self._epsilon - self._epsilon
         self._gradient = np.zeros(self._theta_size)
-        self._theta1 = np.zeros((self._hidden_layer_units, n))
+        self._initialize_matrixs()
+
+    def _initialize_matrixs(self):
+        self._theta1 = np.zeros((self._hidden_layer_units, self._features_count))
         self._theta2 = np.zeros((1, self._hidden_layer_units + 1))
-        self._Delta1 = np.zeros((self._hidden_layer_units, n))
+        self._Delta1 = np.zeros((self._hidden_layer_units, self._features_count))
         self._Delta2 = np.zeros((1, self._hidden_layer_units + 1))
-        self._gradient1 = np.zeros((self._hidden_layer_units, n))
+        self._gradient1 = np.zeros((self._hidden_layer_units, self._features_count))
         self._gradient2 = np.zeros((1, self._hidden_layer_units + 1))
 
-    def _roll_theta(self, n):
+    def _roll_theta(self, theta):
         """
         split theta vector into matrix
-        :param n: features count + 1
-        :return:
         """
         for i in range(self._hidden_layer_units):
-            for j in range(n):
-                index = i * self._hidden_layer_units + j * n
-                self._theta1[i][j] = self._theta[index]
+            for j in range(self._features_count):
+                index = i * self._hidden_layer_units + j * self._features_count
+                self._theta1[i][j] = theta[index]
         for i in range(self._hidden_layer_units + 1):
-            index = self._hidden_layer_units * n + i
-            self._theta2[0][i] = self._theta[index]
+            index = self._hidden_layer_units * self._features_count + i
+            self._theta2[0][i] = theta[index]
 
-    def _unroll_gradient(self, n):
+    def _unroll_gradient(self):
         """
         unroll gradient matrix into vector
-        :param n: features count + 1
-        :return:
         """
         for i in range(self._hidden_layer_units):
-            for j in range(n):
-                index = i * self._hidden_layer_units + j * n
+            for j in range(self._features_count):
+                index = i * self._hidden_layer_units + j * self._features_count
                 self._theta1[i][j] = self._theta[index]
                 self._gradient[index] = self._gradient1[i][j]
         for i in range(self._hidden_layer_units + 1):
-            index = self._hidden_layer_units * n + i
+            index = self._hidden_layer_units * self._features_count + i
             self._gradient[index] = self._gradient2[0][i]
 
     def _sigmoid(self, z):
         return 1.0 / (1.0 + np.exp(z))
 
-    def _cost_function(self):
-        pass
+    def _cost_function(self, x, y, theta):
+        m, n = x.shape
+        cost = 0
+        self._roll_theta(theta)
+        for i in range(m):
+            self._forward_propagation(x[i])
+            cost += (-y[i]*np.log(self._a3) - (1-y[i])*np.log(1-self._a3))
+        cost = cost / m
+        theta1 = self._theta1 * self._theta1
+        theta1[:][0] = 0
+        cost += self._lambda_factor / (2.0 * m) * theta1.sum()
+        theta2 = self._theta2 * self._theta2
+        theta2[:][0] = 0
+        cost += self._lambda_factor / (2.0 * m) * theta2.sum()
+        return cost
 
     def _forward_propagation(self, x):
         self._a1 = x
@@ -290,7 +333,7 @@ class NNClassifierStrategy(ClassifierStrategy):
         self._Delta2 = 0
         self._gradient1 = 0
         self._gradient2 = 0
-        self._roll_theta(n)
+        self._roll_theta(self._theta)
         for i in range(m):
             self._forward_propagation(features[i])
             self._delta3 = self._a3 - labels[i]
@@ -300,24 +343,23 @@ class NNClassifierStrategy(ClassifierStrategy):
         for i in range(self._hidden_layer_units):
             for j in range(n):
                 self._gradient1[i][j] = self._Delta1[i][j] / m
-                if j != 0:
+                if j != 0 and self._regularization:
                     self._gradient1[i][j] += (self._lambda_factor / m * self._theta1[i][j])
-
         for j in range(self._hidden_layer_units+1):
             self._gradient2[0][j] = self._Delta2[0][j] / m
-            if j != 0:
+            if j != 0 and self._regularization:
                 self._gradient2[0][j] += (self._lambda_factor / m * self._theta2[0][j])
         self._unroll_gradient(n)
 
-    def _checking_gradient(self):
+    def _checking_gradient(self, x, y):
         gradient_approx = np.zeros(self._theta_size)
         for i in range(self._theta_size):
             theta_plus = np.array(self._theta)
             theta_plus[i] += self._epsilon
             theta_minus = np.array(self._theta)
             theta_minus[i] -= self._epsilon
-            gradient_approx[i] = (self._cost_function(theta_plus) - \
-                self._cost_function(theta_minus)) / (2 * self._epsilon)
+            gradient_approx[i] = (self._cost_function(x, y, theta_plus) - \
+                self._cost_function(x, y, theta_minus)) / (2 * self._epsilon)
             if abs(self._gradient[i] - gradient_approx[i]) > 0.01:
                 return False
         return True
