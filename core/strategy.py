@@ -203,13 +203,16 @@ class NNClassifierStrategy(ClassifierStrategy):
         self._initialize_all()
         # checking whether gradient is correct,
         # compare it with numerical gradient
+        logging.info('compute back propagation once to check gradient')
         self._back_propagation(features, labels)
-        if not self._checking_gradient():
+        if not self._checking_gradient(features, labels):
             logging.info('gradient is not equal to numerical value approximatly')
             return
         # use gradient descent to compute theta
         for i in range(self._iterations):
             self._back_propagation(features, labels)
+            cost = self._cost_function(features, labels, self._theta)
+            logging.info('iteration: %d, cost: %f' % (i+1, cost))
 
     def predict(self, test_x):
         m, n = test_x.shape
@@ -257,6 +260,7 @@ class NNClassifierStrategy(ClassifierStrategy):
         initialize all algorithm parameters
         """
         # initialize theta in [-epsilon, epsilon]
+        logging.info('initial all parameters')
         self._theta = np.random.random(self._theta_size) * 2 * self._epsilon - self._epsilon
         self._gradient = np.zeros(self._theta_size)
         self._initialize_matrixs()
@@ -275,7 +279,7 @@ class NNClassifierStrategy(ClassifierStrategy):
         """
         for i in range(self._hidden_layer_units):
             for j in range(self._features_count):
-                index = i * self._hidden_layer_units + j * self._features_count
+                index = i * self._features_count + j
                 self._theta1[i][j] = theta[index]
         for i in range(self._hidden_layer_units + 1):
             index = self._hidden_layer_units * self._features_count + i
@@ -287,7 +291,7 @@ class NNClassifierStrategy(ClassifierStrategy):
         """
         for i in range(self._hidden_layer_units):
             for j in range(self._features_count):
-                index = i * self._hidden_layer_units + j * self._features_count
+                index = i * self._features_count + j
                 self._theta1[i][j] = self._theta[index]
                 self._gradient[index] = self._gradient1[i][j]
         for i in range(self._hidden_layer_units + 1):
@@ -314,9 +318,9 @@ class NNClassifierStrategy(ClassifierStrategy):
         return cost
 
     def _forward_propagation(self, x):
-        self._a1 = x
+        self._a1 = np.array([[value] for value in x])
         z2 = self._theta1.dot(self._a1)
-        self._a2 = np.ones(self._hidden_layer_units+1)
+        self._a2 = np.ones((self._hidden_layer_units+1, 1))
         self._a2[1:] = self._sigmoid(z2)
         z3 = self._theta2.dot(self._a2)
         self._a3 = self._sigmoid(z3)
@@ -328,16 +332,18 @@ class NNClassifierStrategy(ClassifierStrategy):
         :param labels: samples labels vector
         :return:
         """
+        logging.info('compute back propagation')
         m, n = features.shape
-        self._Delta1 = 0
-        self._Delta2 = 0
-        self._gradient1 = 0
-        self._gradient2 = 0
+        self._Delta1[:][:] = 0
+        self._Delta2[:][:] = 0
+        self._gradient1[:][:] = 0
+        self._gradient2[:][:] = 0
         self._roll_theta(self._theta)
         for i in range(m):
             self._forward_propagation(features[i])
             self._delta3 = self._a3 - labels[i]
             self._delta2 = (self._theta2.T.dot(self._delta3)) * self._a2 * (1 - self._a2)
+            self._delta2 = self._delta2[1:][:]
             self._Delta1 = self._Delta1 + self._delta2.dot(self._a1.T)
             self._Delta2 = self._Delta2 + self._delta3.dot(self._a2.T)
         for i in range(self._hidden_layer_units):
@@ -349,9 +355,10 @@ class NNClassifierStrategy(ClassifierStrategy):
             self._gradient2[0][j] = self._Delta2[0][j] / m
             if j != 0 and self._regularization:
                 self._gradient2[0][j] += (self._lambda_factor / m * self._theta2[0][j])
-        self._unroll_gradient(n)
+        self._unroll_gradient()
 
     def _checking_gradient(self, x, y):
+        logging.info('checking whether the gradient is correct')
         gradient_approx = np.zeros(self._theta_size)
         for i in range(self._theta_size):
             theta_plus = np.array(self._theta)
@@ -360,7 +367,9 @@ class NNClassifierStrategy(ClassifierStrategy):
             theta_minus[i] -= self._epsilon
             gradient_approx[i] = (self._cost_function(x, y, theta_plus) - \
                 self._cost_function(x, y, theta_minus)) / (2 * self._epsilon)
-            if abs(self._gradient[i] - gradient_approx[i]) > 0.01:
+            difference = abs(self._gradient[i] - gradient_approx[i])
+            logging.info('gradient[%d] difference: % f' % (i, difference))
+            if difference > 0.01:
                 return False
         return True
 

@@ -12,6 +12,7 @@ from os import path
 from nltk.corpus import stopwords
 from nltk.corpus import brown
 from nltk.stem import WordNetLemmatizer
+from gensim import corpora
 from HTMLParser import HTMLParser
 
 
@@ -37,24 +38,21 @@ class EmailETLHelper(object):
     """
 
     @classmethod
-    def instance(cls):
+    def instance(cls, use_tfidf=False):
         if not hasattr(cls, '_instance'):
-            cls._instance = EmailETLHelper()
+            cls._instance = EmailETLHelper(use_tfidf)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self, use_tfidf):
         """
         instance initializtion, loading dictionary file
         """
 
-        dictionary_path = path.abspath(path.join(path.dirname(__file__), '../data/dictionary.txt'))
-        self._dictionary = {}
-        self.n = 1
+        dictionary_path = path.abspath(path.join(path.dirname(__file__), '../data_1/corpus.dictionary'))
         logging.info('loading dictionary...')
-        for term in open(dictionary_path, 'rb'):
-            term = term.strip()
-            self._dictionary[term] = self.n
-            self.n += 1
+        self._dictionary = corpora.Dictionary.load(dictionary_path)
+        # TODO: for tfidf model
+        self._use_tfidf = use_tfidf
 
     def get_feature_count(self):
         """
@@ -62,7 +60,7 @@ class EmailETLHelper(object):
         :return: n
         """
 
-        return self.n
+        return len(self._dictionary.token2id) + 1
 
     @classmethod
     def get_body_from_email(cls, email_path):
@@ -136,11 +134,10 @@ class EmailETLHelper(object):
         :return: np.array feature
         """
 
-        all_words = email_body.strip().split()
-        terms = set(all_words)
-        feature = np.zeros(self.n)
+        tokens = email_body.strip().split()
+        doc_tf = self._dictionary.doc2bow(tokens)
+        feature = np.zeros(self.get_feature_count())
         feature[0] = 1
-        for term in terms:
-            if term in self._dictionary:
-                feature[self._dictionary[term]] = 1
+        for token, _ in doc_tf:
+            feature[token+1] = 1
         return feature
