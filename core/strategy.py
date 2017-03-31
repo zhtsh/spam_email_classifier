@@ -360,6 +360,7 @@ class NNClassifierStrategy(ClassifierStrategy):
     def _checking_gradient(self, x, y):
         logging.info('checking whether the gradient is correct')
         gradient_approx = np.zeros(self._theta_size)
+
         for i in range(self._theta_size):
             theta_plus = np.array(self._theta)
             theta_plus[i] += self._epsilon

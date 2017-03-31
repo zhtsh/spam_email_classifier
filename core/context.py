@@ -16,9 +16,9 @@ class SpamClassifierContext(object):
     spam email classifier context class
     """
 
-    def __init__(self, classifier_strategy):
+    def __init__(self, classifier_strategy, use_tfidf):
         self._classifier_strategy = classifier_strategy
-        self._dictionary = {}
+        self._use_tfidf = use_tfidf
         self._features = None
         self._labels = None
 
@@ -45,7 +45,7 @@ class SpamClassifierContext(object):
         nonspam_files = [path.join(negative_samples_dir, f) for f in listdir(negative_samples_dir)
                          if path.isfile(path.join(negative_samples_dir, f))]
         m = len(spam_files) + len(nonspam_files)
-        etl_helper = EmailETLHelper.instance()
+        etl_helper = EmailETLHelper.instance(self._use_tfidf)
         n = etl_helper.get_feature_count()
         self._features = np.zeros((m, n))
         self._labels = np.zeros(m)
@@ -61,7 +61,7 @@ class SpamClassifierContext(object):
         self._classifier_strategy.load_model(model_path)
 
     def _set_samples_values(self, files, index, label):
-        etl_helper = EmailETLHelper.instance()
+        etl_helper = EmailETLHelper.instance(self._use_tfidf)
         for file_path in files:
             self._features[index] = etl_helper.get_feature_from_body_file(file_path)
             self._labels[index] = label

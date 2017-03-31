@@ -8,11 +8,11 @@ import email
 import logging
 import base64
 import numpy as np
-from os import path
+from os import path, listdir
 from nltk.corpus import stopwords
 from nltk.corpus import brown
 from nltk.stem import WordNetLemmatizer
-from gensim import corpora
+from gensim import corpora, models
 from HTMLParser import HTMLParser
 
 
@@ -31,6 +31,23 @@ class MyHTMLParser(HTMLParser):
     def get_body(self):
         return ' '.join(self._contents)
 
+
+class MyCorpus(object):
+
+    def __iter__(self):
+        postive_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/preprocess_spam'))
+        negative_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/preprocess_nonspam'))
+        spam_files = [path.join(postive_samples_dir, f) for f in listdir(postive_samples_dir)
+                        if path.isfile(path.join(postive_samples_dir, f))]
+        nonspam_files = [path.join(negative_samples_dir, f) for f in listdir(negative_samples_dir)
+                        if path.isfile(path.join(negative_samples_dir, f))]
+        files = spam_files + nonspam_files
+        for file_path in files:
+            with open(file_path, 'rb') as file:
+                terms = file.read().strip().split()
+                yield terms
+
+
 class EmailETLHelper(object):
 
     """
@@ -48,11 +65,32 @@ class EmailETLHelper(object):
         instance initializtion, loading dictionary file
         """
 
-        dictionary_path = path.abspath(path.join(path.dirname(__file__), '../data_1/corpus.dictionary'))
+        # loading corpus dictionary
         logging.info('loading dictionary...')
-        self._dictionary = corpora.Dictionary.load(dictionary_path)
-        # TODO: for tfidf model
+        self._dictionary = corpora.Dictionary()
+        corpus = MyCorpus()
+        documents = []
+        for terms in corpus:
+            documents.append(terms)
+            if len(documents) == 1000:
+                logging.info('add %d documents to dictionary' % len(documents))
+                self._dictionary.add_documents(documents)
+                documents = []
+        if documents:
+            logging.info('add %d documents to dictionary' % len(documents))
+            self._dictionary.add_documents(documents)
+        # self._dictionary.filter_extremes(no_below=20, no_above=0.7, keep_n=500)
+        self._dictionary.filter_extremes(no_below=20, no_above=0.7)
+
+        # loading tfidf model
         self._use_tfidf = use_tfidf
+        self._tfidf_model = None
+        if self._use_tfidf:
+            logging.info('loading tfidf model...')
+            documents = []
+            for terms in corpus:
+                documents.append(self._dictionary.doc2bow(terms))
+            self._tfidf_model = models.TfidfModel(documents)
 
     def get_feature_count(self):
         """
@@ -138,6 +176,12 @@ class EmailETLHelper(object):
         doc_tf = self._dictionary.doc2bow(tokens)
         feature = np.zeros(self.get_feature_count())
         feature[0] = 1
-        for token, _ in doc_tf:
-            feature[token+1] = 1
+        if self._use_tfidf:
+            documents = [doc_tf]
+            docs_tfidf = self._tfidf_model[documents]
+            for token_id, tfidf in docs_tfidf[0]:
+                feature[token_id+1] = tfidf
+        else:
+            for token_id, _ in doc_tf:
+                feature[token_id+1] = 1
         return feature
