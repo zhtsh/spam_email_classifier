@@ -30,7 +30,7 @@ if __name__ == '__main__':
     (options, args) = parser.parse_args()
     regularization = True if options.regularization == "1" else False
     optimization = ClassifierStrategy.SGD if options.optimization=="sgd" else ClassifierStrategy.BGD
-    tfidf = True if options.tfidf else False
+    tfidf = True if options.tfidf == "1" else False
     try:
         iterations = int(options.iterations)
     except:

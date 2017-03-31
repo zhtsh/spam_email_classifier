@@ -20,6 +20,8 @@ if __name__ == '__main__':
                       help="model type: lr, svm, nn")
     parser.add_option("-e", "--evaluate", dest="evaluate", default="test",
                       help="evaluate data set: train or test")
+    parser.add_option("-k", "--tfidf", dest="tfidf", default="0",
+                      help="whether to use tfidf model")
     (options, args) = parser.parse_args()
     if options.model_type == "lr":
         model_path = path.abspath(path.join(path.dirname(__file__), '../data/lr.model'))
@@ -39,7 +41,8 @@ if __name__ == '__main__':
     else:
         postive_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/spam_test'))
         negative_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/nonspam_test'))
-    classifier_context = SpamClassifierContext(classifier_strategy)
+    tfidf = True if options.tfidf == "1" else False
+    classifier_context = SpamClassifierContext(classifier_strategy, tfidf)
     classifier_context.load_samples(postive_samples_dir, negative_samples_dir)
     classifier_context.load_model(model_path)
     test_x, test_y = classifier_context.get_samples()

@@ -20,6 +20,8 @@ if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option("-t", "--type", dest="model_type", default="lr",
                       help="model type: lr, svm, nn")
+    parser.add_option("-k", "--tfidf", dest="tfidf", default="0",
+                      help="whether to use tfidf model")
     (options, args) = parser.parse_args()
     if options.model_type == "lr":
         model_path = path.abspath(path.join(path.dirname(__file__), '../data/lr.model'))
@@ -36,7 +38,8 @@ if __name__ == '__main__':
     if not args:
         print('Usage: python predict.py [options] mime_email_file')
         sys.exit(1)
-    classifier_context = SpamClassifierContext(classifier_strategy)
+    tfidf = True if options.tfidf == "1" else False
+    classifier_context = SpamClassifierContext(classifier_strategy, tfidf)
     classifier_context.load_model(model_path)
     etl_helper = EmailETLHelper.instance()
     feature = etl_helper.get_feature_from_email(args[0])
