@@ -35,8 +35,10 @@ class MyHTMLParser(HTMLParser):
 class MyCorpus(object):
 
     def __iter__(self):
-        postive_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/preprocess_spam'))
-        negative_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/preprocess_nonspam'))
+        postive_samples_dir = path.abspath(path.join(path.dirname(__file__),
+                                                     '../data/preprocess_spam'))
+        negative_samples_dir = path.abspath(path.join(path.dirname(__file__),
+                                                      '../data/preprocess_nonspam'))
         spam_files = [path.join(postive_samples_dir, f) for f in listdir(postive_samples_dir)
                         if path.isfile(path.join(postive_samples_dir, f))]
         nonspam_files = [path.join(negative_samples_dir, f) for f in listdir(negative_samples_dir)
@@ -67,30 +69,18 @@ class EmailETLHelper(object):
 
         # loading corpus dictionary
         logging.info('loading dictionary...')
-        self._dictionary = corpora.Dictionary()
-        corpus = MyCorpus()
-        documents = []
-        for terms in corpus:
-            documents.append(terms)
-            if len(documents) == 1000:
-                logging.info('add %d documents to dictionary' % len(documents))
-                self._dictionary.add_documents(documents)
-                documents = []
-        if documents:
-            logging.info('add %d documents to dictionary' % len(documents))
-            self._dictionary.add_documents(documents)
-        # self._dictionary.filter_extremes(no_below=20, no_above=0.7, keep_n=500)
-        self._dictionary.filter_extremes(no_below=20, no_above=0.7)
+        dictionary_path = path.abspath(path.join(path.dirname(__file__),
+                                                 '../data/corpus.dict'))
+        self._dictionary = corpora.Dictionary.load(dictionary_path)
 
         # loading tfidf model
         self._use_tfidf = use_tfidf
         self._tfidf_model = None
         if self._use_tfidf:
             logging.info('loading tfidf model...')
-            documents = []
-            for terms in corpus:
-                documents.append(self._dictionary.doc2bow(terms))
-            self._tfidf_model = models.TfidfModel(documents)
+            tfidf_path = path.abspath(path.join(path.dirname(__file__),
+                                                '../data/corpus.tfidf_model'))
+            self._tfidf_model = models.TfidfModel.load(tfidf_path)
 
     def get_feature_count(self):
         """
