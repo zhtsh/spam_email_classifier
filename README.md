@@ -4,7 +4,7 @@ Simple spam email classifier was implemented by logistic regression, neural netw
 ## install third party library
 
 ## how to use
-`    def train(self, context):
+    def train(self, context):
         features, labels = context.get_samples()
         self._features_count = features.shape[1]
         self._theta_size = self._features_count * self._hidden_layer_units + \
@@ -23,4 +23,4 @@ Simple spam email classifier was implemented by logistic regression, neural netw
             for j in range(self._theta_size):
                 self._theta[j] = self._theta[j] + self._alpha*self._gradient[j]
             cost = self._cost_function(features, labels, self._theta)
-            logging.info('iteration: %d, cost: %f' % (i+1, cost))`
+            logging.info('iteration: %d, cost: %f' % (i+1, cost))
