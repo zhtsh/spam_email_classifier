@@ -5,7 +5,9 @@ Simple spam email classifier was implemented by logistic regression, neural netw
 1. install python virtual enviroment
 
        pip install virtualenv
+       
        cd venv
+       
        source ./bin/activate
    
 2. install requirement.txt library
