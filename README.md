@@ -1,16 +1,21 @@
-# spam_email_classifier
+## spam_email_classifier
 Simple spam email classifier was implemented by logistic regression, neural network and svm.
 
 ## install third party library
 1. install python virtual enviroment
-   pip install virtualenv\n
+
+   pip install virtualenv
+   
    cd venv
+   
    source ./bin/activate
    
 2. install requirement.txt library
+
    pip install -r requirement.tx
 
 ## how to use
+
 1. preprocess the email corpus
 
 2. generate email dictionary and tfidf model for tfidf weights
