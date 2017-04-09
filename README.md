@@ -8,9 +8,9 @@ Simple spam email classifier was implemented by logistic regression, neural netw
        cd venv
        source ./bin/activate
    
-2. install requirement.txt library
+2. install requirements.txt library
 
-       pip install -r requirement.txt
+       pip install -r requirements.txt
 
 ## how to use
 
