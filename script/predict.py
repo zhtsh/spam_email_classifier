@@ -41,7 +41,7 @@ if __name__ == '__main__':
     tfidf = True if options.tfidf == "1" else False
     classifier_context = SpamClassifierContext(classifier_strategy, tfidf)
     classifier_context.load_model(model_path)
-    etl_helper = EmailETLHelper.instance()
+    etl_helper = EmailETLHelper.instance(tfidf)
     feature = etl_helper.get_feature_from_email(args[0])
     test_x = np.array([feature])
     test_lable = classifier_context.predict(test_x)

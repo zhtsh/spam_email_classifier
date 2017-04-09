@@ -25,8 +25,8 @@ if __name__ == '__main__':
     if documents:
         logging.info('add %d documents to dictionary' % len(documents))
         dictionary.add_documents(documents)
-    # self._dictionary.filter_extremes(no_below=20, no_above=0.7, keep_n=500)
-    dictionary.filter_extremes(no_below=20, no_above=0.7)
+    dictionary.filter_extremes(no_below=20, no_above=0.7, keep_n=500)
+    # dictionary.filter_extremes(no_below=20, no_above=0.7)
     dictionary_path = path.abspath(path.join(path.dirname(__file__), '../data/corpus.dict'))
     dictionary.save(dictionary_path)
 

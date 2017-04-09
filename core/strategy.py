@@ -94,6 +94,7 @@ class LRClassifierStrategy(ClassifierStrategy):
                 # gradient = self._cost_function_sgd(x[k], y[k])
                 for j in range(n):
                     self._theta[j] = self._theta[j] - self._alpha*gradient[j]
+            logging.info('iteration: %d' % (i+1,))
             logging.info('theta: %s' % str(self._theta))
 
     def predict(self, test_x):
@@ -167,7 +168,7 @@ class NNClassifierStrategy(ClassifierStrategy):
     def __init__(self,
                  hidden_layer_units=100,
                  alpha=0.03,
-                 iterations=10,
+                 iterations=20,
                  epsilon=0.01,
                  regularization=False,
                  lambda_factor=100,
@@ -211,6 +212,8 @@ class NNClassifierStrategy(ClassifierStrategy):
         # use gradient descent to compute theta
         for i in range(self._iterations):
             self._back_propagation(features, labels)
+            for j in range(self._theta_size):
+                self._theta[j] = self._theta[j] - self._alpha*self._gradient[j]
             cost = self._cost_function(features, labels, self._theta)
             logging.info('iteration: %d, cost: %f' % (i+1, cost))
 
@@ -369,7 +372,8 @@ class NNClassifierStrategy(ClassifierStrategy):
             gradient_approx[i] = (self._cost_function(x, y, theta_plus) - \
                 self._cost_function(x, y, theta_minus)) / (2 * self._epsilon)
             difference = abs(self._gradient[i] - gradient_approx[i])
-            logging.info('gradient[%d] difference: % f' % (i, difference))
+            logging.info('gradient[%d] %f - %f = % f' % (i, self._gradient[i],
+                                                         gradient_approx[i], difference))
             if difference > 0.01:
                 return False
         return True
