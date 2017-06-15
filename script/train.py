@@ -13,12 +13,13 @@ from strategy import ClassifierStrategy
 from strategy import SVMClassifierStrategy
 from strategy import LRClassifierStrategy
 from strategy import NNClassifierStrategy
+from strategy import DNNClassifierStrategy
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
     parser = OptionParser()
     parser.add_option("-t", "--type", dest="model_type", default="lr",
-                      help="model type: lr, svm, nn")
+                      help="model type: lr, svm, nn, dnn")
     parser.add_option("-r", "--regularization", dest="regularization", default="0",
                       help="value: 0 or 1, whether to use regularization items, svm ignore this option")
     parser.add_option("-o", "--optimization", dest="optimization", default="bgd",
@@ -60,6 +61,9 @@ if __name__ == '__main__':
         model_path = path.abspath(path.join(path.dirname(__file__), '../data/nn.model'))
         classifier_strategy = NNClassifierStrategy(hidden_layer_units=100,
                                                    iterations=iterations)
+    elif options.model_type == "dnn":
+        model_path = path.abspath(path.join(path.dirname(__file__), '../data/dnn.model'))
+        classifier_strategy = DNNClassifierStrategy()
     else:
         parser.print_help()
         sys.exit(1)
@@ -67,5 +71,8 @@ if __name__ == '__main__':
     negative_samples_dir = path.abspath(path.join(path.dirname(__file__), '../data/nonspam_train'))
     classifier_context = SpamClassifierContext(classifier_strategy, tfidf)
     classifier_context.load_samples(postive_samples_dir, negative_samples_dir)
+    if options.model_type == "dnn":
+        features, _ = classifier_context.get_samples()
+        classifier_strategy.set_sizes((features.shape[1], 100, 2))
     classifier_context.train()
     classifier_context.save_model(model_path)

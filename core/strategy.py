@@ -12,6 +12,8 @@ from random import uniform
 sys.path.append(path.abspath(path.join(path.dirname(__file__), '../libsvm')))
 from svmutil import *
 
+import network2
+
 
 class ClassifierStrategy(object):
 
@@ -302,7 +304,7 @@ class NNClassifierStrategy(ClassifierStrategy):
             self._gradient[index] = self._gradient2[0][i]
 
     def _sigmoid(self, z):
-        return 1.0 / (1.0 + np.exp(z))
+        return 1.0 / (1.0 + np.exp(-z))
 
     def _cost_function(self, x, y, theta):
         m, n = x.shape
@@ -377,6 +379,60 @@ class NNClassifierStrategy(ClassifierStrategy):
             if difference > 0.01:
                 return False
         return True
+
+
+class DNNClassifierStrategy(ClassifierStrategy):
+
+    """
+    deep neural network classifier strategy class
+    """
+
+    def __init__(self,
+                 sizes=None,
+                 epochs=100,
+                 mini_batch_size=10,
+                 eta=0.01,
+                 lmbda=100):
+        self.sizes = sizes
+        self.epochs = epochs
+        self.mini_batch_size = mini_batch_size
+        self.eta = eta
+        self.lmbda = lmbda
+        if self.sizes:
+            self.net = network2.Network(self.sizes)
+        else:
+            self.net = None
+
+    def set_sizes(self, sizes):
+        self.sizes = sizes
+        self.net = network2.Network(self.sizes)
+
+    def train(self, context):
+        features, labels = context.get_samples()
+        training_inputs = [np.reshape(x, (features.shape[1], 1)) for x in features]
+        training_results = [self._vectorized_result(y) for y in labels]
+        training_data = zip(training_inputs, training_results)
+        self.net.SGD(training_data,
+                     self.epochs,
+                     self.mini_batch_size,
+                     self.eta,
+                     self.lmbda,
+                     monitor_training_cost=True,
+                     monitor_training_accuracy=True)
+
+    def _vectorized_result(self, j):
+        e = np.zeros((2, 1))
+        e[j] = 1.0
+        return e
+
+    def predict(self, test_x):
+        pass
+
+    def save_model(self, model_path):
+        self.net.save(model_path)
+
+    def load_model(self, model_path):
+        self.net = network2.load(model_path)
 
 
 class SVMClassifierStrategy(ClassifierStrategy):
