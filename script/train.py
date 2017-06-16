@@ -63,7 +63,7 @@ if __name__ == '__main__':
                                                    iterations=iterations)
     elif options.model_type == "dnn":
         model_path = path.abspath(path.join(path.dirname(__file__), '../data/dnn.model'))
-        classifier_strategy = DNNClassifierStrategy()
+        classifier_strategy = DNNClassifierStrategy(epochs=200)
     else:
         parser.print_help()
         sys.exit(1)

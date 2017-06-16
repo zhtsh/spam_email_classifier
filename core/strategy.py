@@ -426,7 +426,9 @@ class DNNClassifierStrategy(ClassifierStrategy):
         return e
 
     def predict(self, test_x):
-        pass
+        test_inputs = [np.reshape(x, (test_x.shape[1], 1)) for x in test_x]
+        test_results = [np.argmax(self.net.feedforward(x)) for x  in test_inputs]
+        return np.array(test_results)
 
     def save_model(self, model_path):
         self.net.save(model_path)

@@ -12,6 +12,7 @@ from context import SpamClassifierContext
 from strategy import SVMClassifierStrategy
 from strategy import LRClassifierStrategy
 from strategy import NNClassifierStrategy
+from strategy import DNNClassifierStrategy
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
@@ -32,6 +33,9 @@ if __name__ == '__main__':
     elif options.model_type == "nn":
         model_path = path.abspath(path.join(path.dirname(__file__), '../data/nn.model'))
         classifier_strategy = NNClassifierStrategy()
+    elif options.model_type == "dnn":
+        model_path = path.abspath(path.join(path.dirname(__file__), '../data/dnn.model'))
+        classifier_strategy = DNNClassifierStrategy()
     else:
         parser.print_help()
         sys.exit(1)
